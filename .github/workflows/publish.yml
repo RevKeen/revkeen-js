@@ -1,0 +1,142 @@
+name: Publish browser packages
+
+# Template for RevKeen/revkeen-js (REV-8237). Copy to .github/workflows/ in
+# that repository. Release branches are prepared by
+# .github/workflows/browser-release.yml in the private monorepo; merging one
+# into main publishes every package whose version is not yet on npm, in
+# order, with npm provenance through trusted publishing. No npm token exists.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-publish
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Validate and plan the release
+    runs-on: ubuntu-24.04
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Enforce credential isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKFLOW=.github/workflows/publish.yml
+          if grep -Eq '\$\{\{[[:space:]]*secrets\.' "$WORKFLOW"; then
+            echo "::error::Publishing must not reference repository secrets; it uses npm trusted publishing."
+            exit 1
+          fi
+          if grep -Eq '^[[:space:]]+workflow_dispatch:' "$WORKFLOW"; then
+            echo "::error::Out-of-band workflow_dispatch publishing is forbidden."
+            exit 1
+          fi
+
+      - name: Plan unpublished versions
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import fs from "node:fs";
+          import { execFileSync } from "node:child_process";
+
+          // Publish order: @revkeen/react depends on @revkeen/js.
+          const dirs = ["packages/js", "packages/react", "packages/checkout-embed"];
+          const plan = [];
+          for (const dir of dirs) {
+            if (!fs.existsSync(`${dir}/package.json`)) continue;
+            const pkg = JSON.parse(fs.readFileSync(`${dir}/package.json`, "utf8"));
+            if (pkg.private) throw new Error(`${dir} is private`);
+            if (pkg.repository?.url !== "https://github.com/RevKeen/revkeen-js.git" || pkg.repository?.directory !== dir) {
+              throw new Error(`${pkg.name}: repository must name this repo and ${dir}, or npm rejects provenance`);
+            }
+            for (const deps of [pkg.dependencies, pkg.peerDependencies]) {
+              for (const [name, range] of Object.entries(deps ?? {})) {
+                if (String(range).startsWith("workspace:")) throw new Error(`${pkg.name}: ${name} is ${range}`);
+              }
+            }
+            if (!fs.existsSync(`${dir}/dist`)) throw new Error(`${pkg.name}: dist/ is missing`);
+            let published = [];
+            try {
+              published = JSON.parse(execFileSync("npm", ["view", pkg.name, "versions", "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }));
+              if (!Array.isArray(published)) published = [published];
+            } catch (error) {
+              if (!String(error.stdout ?? "").includes("E404") && !String(error.stderr ?? "").includes("E404")) throw error;
+            }
+            if (published.includes(pkg.version)) continue;
+            const pre = /^\d+\.\d+\.\d+-([0-9A-Za-z-]+)/.exec(pkg.version);
+            plan.push({ dir, name: pkg.name, version: pkg.version, tag: pre ? pre[1] : "latest" });
+          }
+          console.log(`count=${plan.length}`);
+          console.log(`plan=${JSON.stringify(plan)}`);
+          NODE
+
+      - name: Dry-run pack
+        shell: bash
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
+        run: |
+          set -euo pipefail
+          echo "## Will publish on merge" >> "$GITHUB_STEP_SUMMARY"
+          for row in $(node -e 'for (const p of JSON.parse(process.env.PLAN)) console.log(`${p.dir}|${p.name}@${p.version}|${p.tag}`)'); do
+            IFS='|' read -r dir id tag <<< "$row"
+            echo "- \`${id}\` (dist-tag \`${tag}\`)" >> "$GITHUB_STEP_SUMMARY"
+            npm pack --dry-run "./${dir}"
+          done
+
+  publish:
+    name: Publish with provenance
+    needs: plan
+    if: github.event_name == 'push' && needs.plan.outputs.count != '0'
+    runs-on: ubuntu-24.04
+    environment: npm-release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Require npm with trusted publishing
+        shell: bash
+        run: |
+          NPM_VERSION=$(npm --version)
+          IFS=. read -r MAJOR MINOR _ <<< "$NPM_VERSION"
+          if [ "$MAJOR" -lt 11 ] || { [ "$MAJOR" -eq 11 ] && [ "$MINOR" -lt 5 ]; }; then
+            npm install -g npm@^11.5.1
+          fi
+
+      - name: Publish in order and tag
+        shell: bash
+        env:
+          PLAN: ${{ needs.plan.outputs.plan }}
+        run: |
+          set -euo pipefail
+          git config user.name "RevKeen Bot"
+          git config user.email "bot@revkeen.com"
+          for row in $(node -e 'for (const p of JSON.parse(process.env.PLAN)) console.log(`${p.dir}|${p.name}|${p.version}|${p.tag}`)'); do
+            IFS='|' read -r dir name version tag <<< "$row"
+            npm publish "./${dir}" --provenance --access public --tag "$tag"
+            git tag -a "${name}@${version}" -m "Release ${name}@${version}"
+            git push origin "refs/tags/${name}@${version}"
+          done
