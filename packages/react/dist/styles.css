@@ -1,0 +1,200 @@
+/*
+ * Optional default skin for @revkeen/react display components.
+ *
+ * Structural only: layout, spacing and focus. Every colour, font and size is
+ * inherited from the merchant's page (currentColor / inherit), so this file
+ * introduces no palette or type scale. Override any class freely, or skip the
+ * import and style the components with your own className.
+ */
+
+.rk-product-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rk-product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.rk-product-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.rk-product-name,
+.rk-product-description,
+.rk-product-availability {
+  margin: 0;
+  font: inherit;
+}
+
+.rk-product-name {
+  font-weight: 600;
+}
+
+.rk-price {
+  font-variant-numeric: tabular-nums;
+}
+
+.rk-product-card .rk-button {
+  margin-top: auto;
+}
+
+.rk-button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.625em 1em;
+  border: 1px solid currentColor;
+  border-radius: 0.375em;
+  background: none;
+}
+
+.rk-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.rk-button:focus-visible,
+.rk-pricing-toggle-option:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.rk-key-warning {
+  margin: 0;
+  padding: 0.5em 0.75em;
+  border: 1px dashed currentColor;
+  font: inherit;
+}
+
+.rk-cart-count {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rk-product-grid *,
+  .rk-button {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ── Builder element options (REV-8559): variant, size, radius ──────────────
+ * Structural only. The solid variant reads the merchant's own --rk-accent /
+ * --rk-accent-contrast (falling back to the inherited text colour and the
+ * system Canvas colour), so no palette is introduced here. */
+
+.rk-button--outline {
+  border: 1px solid currentColor;
+  background: none;
+}
+
+.rk-button--solid {
+  border: 1px solid var(--rk-accent, currentColor);
+  background: var(--rk-accent, currentColor);
+  color: var(--rk-accent-contrast, Canvas);
+}
+
+.rk-button--plain {
+  border: 0;
+  background: none;
+  padding-inline: 0;
+  text-decoration: underline;
+}
+
+.rk-button--sm {
+  padding: 0.375em 0.75em;
+}
+
+.rk-button--md {
+  padding: 0.625em 1em;
+}
+
+.rk-button--lg {
+  padding: 0.875em 1.5em;
+}
+
+.rk-radius--none {
+  border-radius: 0;
+}
+
+.rk-radius--sm {
+  border-radius: 0.25em;
+}
+
+.rk-radius--md {
+  border-radius: 0.375em;
+}
+
+.rk-radius--full {
+  border-radius: 999px;
+}
+
+a.rk-button {
+  display: inline-block;
+  text-align: center;
+}
+
+.rk-pricing-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.rk-pricing-toggle-option {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.375em 0.875em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: none;
+  opacity: 0.7;
+}
+
+.rk-pricing-toggle-option[aria-pressed="true"] {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.rk-pricing-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rk-pricing-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rk-pricing-plan .rk-button {
+  margin-top: auto;
+}
+
+.rk-thank-you {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rk-buy-button {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}

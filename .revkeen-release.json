@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "RevKeen/revkeen",
+    "sha": "bd68d7de9bd02382e8857da22a6b02fd7e4c256c"
+  },
+  "packages": [
+    {
+      "name": "@revkeen/js",
+      "dir": "packages/js",
+      "version": "0.1.0-beta.0",
+      "tag": "beta"
+    },
+    {
+      "name": "@revkeen/react",
+      "dir": "packages/react",
+      "version": "0.1.0-beta.0",
+      "tag": "beta"
+    },
+    {
+      "name": "@revkeen/checkout-embed",
+      "dir": "packages/checkout-embed",
+      "version": "0.1.0-beta.0",
+      "tag": "beta"
+    }
+  ]
+}
