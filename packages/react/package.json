@@ -1,0 +1,45 @@
+{
+  "name": "@revkeen/react",
+  "version": "0.1.0-beta.0",
+  "description": "React cart hooks and headless display components (ProductGrid, ProductCard, PriceDisplay, BuyButton, CartButton) for selling RevKeen products from Framer, Lovable, v0, Bolt or any React app. Publishable-key browser SDK only.",
+  "license": "Apache-2.0",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RevKeen/revkeen-js.git",
+    "directory": "packages/react"
+  },
+  "dependencies": {
+    "@revkeen/js": "^0.1.0-beta.0"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19"
+  }
+}
